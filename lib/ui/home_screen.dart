@@ -1,7 +1,37 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class HomeScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:image_search/model/Photo.dart';
+import 'package:image_search/ui/widget/photo_widget.dart';
+import 'package:http/http.dart' as http;
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _controller = TextEditingController();
+
+  List<Photo> _photos = [];
+
+  Future<List<Photo>> fetch(String query) async {
+    final response = await http.get(Uri.parse(
+        'https://pixabay.com/api/?key=31754924-45f867a911fee356971928f35&q=$query&image_type=photo'));
+
+    Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    Iterable hits = jsonResponse['hits'];
+    return hits.map((e) => Photo.fromJson(e)).toList();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // 다쓰고 해제해주어야 함
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +46,21 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField( // 검색창
+              controller: _controller,
               decoration: InputDecoration(
                 border: const OutlineInputBorder( // const 는 변수없이 사용할 때 사용(메모리 아낄 수 있음) 가장 마지막에 붙인다.
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
                 ),
                 suffixIcon: IconButton(
-                  onPressed: () {
-                    //
-                }, icon: const Icon(Icons.search),)
+                  onPressed: () async {
+                    final photos = await fetch(_controller.text);
+                    setState(() {
+                      _photos = photos;
+                    });
+                },
+                  icon: const Icon(Icons.search),)
               ),
             ),
           ),
@@ -33,22 +68,15 @@ class HomeScreen extends StatelessWidget {
             child: GridView.builder( // 갯수가 동적이라면 builder 사용
               padding: const EdgeInsets.all(16),
               shrinkWrap: true,
-              itemCount: 20,
+              itemCount: _photos.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // 2열
                 crossAxisSpacing: 16, // 여백
                 mainAxisSpacing: 16, // 여백
               ),
               itemBuilder: (context, index) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                    image: DecorationImage(
-                      fit: BoxFit.cover,
-                      image: NetworkImage('https://w.namu.la/s/5a0dfbc22d0e432def0ab164c2f53441794f55e17f00ce84ab021bea2dae11d2c0d93adbfd509f1f4fc1476d32fa854b7b3d0d58ba9d0fbad8b57f2280d6d3306bc4040ce0fb41edd216d15572a25511156fe44e51c444cf96a5f672bc6eca13'),
-                    ),
-                  ),
-                );
+                final photo = _photos[index];
+                return PhotoWidget(photo: photo);
               },
             ),
           ),
