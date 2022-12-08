@@ -13,8 +13,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _controller = TextEditingController();
 
-  List<Photo> _photos = [];
-
   @override
   void dispose() {
     _controller.dispose(); // 다쓰고 해제해주어야 함
@@ -45,30 +43,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 suffixIcon: IconButton(
                   onPressed: () async {
-                    final photos = await photoProvider.api.fetch(_controller.text);
-                    setState(() {
-                      _photos = photos;
-                    });
+                    photoProvider.fetch(_controller.text);
                 },
                   icon: const Icon(Icons.search),)
               ),
             ),
           ),
-          Expanded(
-            child: GridView.builder( // 갯수가 동적이라면 builder 사용
-              padding: const EdgeInsets.all(16),
-              shrinkWrap: true,
-              itemCount: _photos.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2열
-                crossAxisSpacing: 16, // 여백
-                mainAxisSpacing: 16, // 여백
-              ),
-              itemBuilder: (context, index) {
-                final photo = _photos[index];
-                return PhotoWidget(photo: photo,);
-              },
-            ),
+          StreamBuilder<List<Photo>>(
+            stream: photoProvider.photoStream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return CircularProgressIndicator();
+              }
+              final photos = snapshot.data!;
+              return Expanded(
+                child: GridView.builder( // 갯수가 동적이라면 builder 사용
+                  padding: const EdgeInsets.all(16),
+                  shrinkWrap: true,
+                  itemCount: photos.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 2열
+                    crossAxisSpacing: 16, // 여백
+                    mainAxisSpacing: 16, // 여백
+                  ),
+                  itemBuilder: (context, index) {
+                    final photo = photos[index];
+                    return PhotoWidget(photo: photo,);
+                  },
+                ),
+              );
+            }
           ),
         ],
       ),
