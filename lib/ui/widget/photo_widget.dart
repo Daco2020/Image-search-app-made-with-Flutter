@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_search/data/api.dart';
+import 'package:image_search/data/pixabay_api.dart';
 import 'package:image_search/model/Photo.dart';
 
 class PhotoWidget extends StatelessWidget {
@@ -14,7 +14,7 @@ class PhotoWidget extends StatelessWidget {
         image: DecorationImage(
           fit: BoxFit.cover,
           image: NetworkImage(
-            photo.webformatURL
+            photo.previewUrl
           ),
         ),
       ),
